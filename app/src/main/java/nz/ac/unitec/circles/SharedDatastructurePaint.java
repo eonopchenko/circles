@@ -4,6 +4,8 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.Handler;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -61,7 +63,7 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
     }
 
     private final List<ColorChangedEventListener> colorChangedListeners = new ArrayList<>();
-    private final ArrayList<Sketch> sketchList = new ArrayList<>();
+    private ArrayList<Sketch> sketchList = new ArrayList<>();
     private final ArrayList<Sketch> undoneSketchList = new ArrayList<>();
     private final Paint paint = new Paint();
     private final Random random = new Random();
@@ -149,18 +151,20 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
     @Override
     public boolean onTouch(View v, MotionEvent event) {
 
-        float touchX = event.getX();
-        float touchY = event.getY();
+        switch (event.getActionMasked()) {
 
-        switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                break;
-
             case MotionEvent.ACTION_MOVE:
+
                 colorThreadState = ColorThreadState.STARTED;
+
                 int color = random.nextInt();
                 fillColorChanged(color);
-                sketchList.add(new CircleSketch(touchX, touchY, color));
+                sketchList.add(new CircleSketch(event.getX(0), event.getY(0), color));
+
+                if (event.getPointerCount() == 2) {
+                    sketchList.add(new CircleSketch(event.getX(1), event.getY(1), color));
+                }
                 break;
 
             case MotionEvent.ACTION_UP:
@@ -212,12 +216,57 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
 
         int size = sketchList.size();
 
-        for(int index = size >= 10 ? size - 10 : 0; index < size; index++) {
+        for (int index = size >= 10 ? size - 10 : 0; index < size; index++) {
             undoneSketchList.add(sketchList.get(index));
         }
 
         sketchList.clear();
 
         invalidate();
+    }
+
+    @Override
+    public Parcelable onSaveInstanceState() {
+        Parcelable superState = super.onSaveInstanceState();
+        SavedContext savedContext = new SavedContext(superState);
+        savedContext.sketches = sketchList;
+        return savedContext;
+    }
+
+    @Override
+    public void onRestoreInstanceState(Parcelable state) {
+        SavedContext savedContext = (SavedContext) state;
+        super.onRestoreInstanceState(savedContext.getSuperState());
+        this.sketchList = savedContext.sketches;
+    }
+
+    private static class SavedContext extends BaseSavedState {
+
+        ArrayList<Sketch> sketches;
+
+        SavedContext(Parcelable superState) {
+            super(superState);
+        }
+
+        private SavedContext(Parcel in) {
+            super(in);
+            in.readList(sketches, sketches.getClass().getClassLoader());
+        }
+
+        @Override
+        public void writeToParcel(Parcel out, int flags) {
+            super.writeToParcel(out, flags);
+            out.writeList(sketches);
+        }
+
+        public static final Parcelable.Creator<SavedContext> CREATOR
+                = new Parcelable.Creator<SavedContext>() {
+            public SavedContext createFromParcel(Parcel in) {
+                return new SavedContext(in);
+            }
+            public SavedContext[] newArray(int size) {
+                return new SavedContext[size];
+            }
+        };
     }
 }

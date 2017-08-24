@@ -5,6 +5,5 @@ package nz.ac.unitec.circles;
  */
 
 public interface ColorChangedEventListener {
-    void onStrokeColorChanged(int color);
     void onFillColorChanged(int color);
 }

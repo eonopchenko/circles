@@ -19,11 +19,6 @@ public class PaintFragment extends Fragment implements ColorChangedEventListener
     ImageButton btnToolFillColor;
 
     @Override
-    public void onStrokeColorChanged(int color) {
-        btnToolStrokeColor.setBackgroundColor(color);
-    }
-
-    @Override
     public void onFillColorChanged(int color) {
         btnToolFillColor.setBackgroundColor(color);
     }
