@@ -3,6 +3,8 @@ package nz.ac.unitec.circles;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -17,6 +19,13 @@ import java.util.Random;
  */
 
 public class SharedDatastructurePaint extends View implements View.OnTouchListener {
+
+    private enum ColorThreadState {
+        IDLE,
+        STARTED,
+        ACTIVE,
+        COMPLETED
+    }
 
     private abstract class Sketch {
     }
@@ -33,9 +42,6 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
             this.fillColor = fillColor;
         }
 
-        public int getFillColor() {
-            return fillColor;
-        }
 
         public float getCenterX() {
             return centerX;
@@ -44,6 +50,14 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
         public float getCenterY() {
             return centerY;
         }
+
+        public int getFillColor() {
+            return fillColor;
+        }
+
+        public void setFillColor(int fillColor) {
+            this.fillColor = fillColor;
+        }
     }
 
     private final List<ColorChangedEventListener> colorChangedListeners = new ArrayList<>();
@@ -51,21 +65,73 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
     private final ArrayList<Sketch> undoneSketchList = new ArrayList<>();
     private final Paint paint = new Paint();
     private final Random random = new Random();
+    ColorThreadState colorThreadState = ColorThreadState.IDLE;
 
     public SharedDatastructurePaint(Context context) {
         super(context);
-        setOnTouchListener(this);
+        init();
     }
 
     public SharedDatastructurePaint(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        setOnTouchListener(this);
+        init();
     }
 
     public SharedDatastructurePaint(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        setOnTouchListener(this);
+        init();
     }
+
+    private void init() {
+        setOnTouchListener(this);
+
+        final Handler h = new Handler();
+
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                long time = 0;
+                while(true) {
+                    switch (colorThreadState) {
+                        case IDLE: {
+                            break;
+                        }
+
+                        case STARTED: {
+                            time = SystemClock.currentThreadTimeMillis();
+                            colorThreadState = ColorThreadState.ACTIVE;
+                            break;
+                        }
+
+                        case ACTIVE: {
+                            if (SystemClock.currentThreadTimeMillis() - time >= 1000) {
+                                colorThreadState = ColorThreadState.COMPLETED;
+                            }
+                            break;
+                        }
+
+                        case COMPLETED: {
+                            h.post(updateColor);
+                            colorThreadState = ColorThreadState.STARTED;
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+        t.start();
+    }
+
+    Runnable updateColor = new Runnable() {
+        public void run() {
+            Sketch s = sketchList.get(sketchList.size() - 1);
+            if (s instanceof CircleSketch) {
+                int color = random.nextInt();
+                fillColorChanged(color);
+                ((CircleSketch) s).setFillColor(color);
+                invalidate();
+            }
+        }
+    };
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -82,9 +148,26 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        int color = random.nextInt();
-        fillColorChanged(color);
-        sketchList.add(new CircleSketch(event.getX(), event.getY(), color));
+
+        float touchX = event.getX();
+        float touchY = event.getY();
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+                colorThreadState = ColorThreadState.STARTED;
+                int color = random.nextInt();
+                fillColorChanged(color);
+                sketchList.add(new CircleSketch(touchX, touchY, color));
+                break;
+
+            case MotionEvent.ACTION_UP:
+                colorThreadState = ColorThreadState.IDLE;
+                break;
+        }
+
         invalidate();
         return true;
     }
