@@ -172,6 +172,7 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
                 break;
         }
 
+        undoneSketchList.clear();
         invalidate();
         return true;
     }
@@ -216,7 +217,9 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
 
         int size = sketchList.size();
 
-        for (int index = size >= 10 ? size - 10 : 0; index < size; index++) {
+        int last = (size >= 10) ? (size - 10) : 0;
+        for (int index = size - 1; index >= last; index--) {
+//        for (int index = size >= 10 ? size - 10 : 0; index < size; index++) {
             undoneSketchList.add(sketchList.get(index));
         }
 
