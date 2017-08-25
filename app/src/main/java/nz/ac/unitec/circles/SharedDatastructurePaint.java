@@ -67,7 +67,7 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
     private final ArrayList<Sketch> undoneSketchList = new ArrayList<>();
     private final Paint paint = new Paint();
     private final Random random = new Random();
-    ColorThreadState colorThreadState = ColorThreadState.IDLE;
+    private ColorThreadState colorThreadState = ColorThreadState.IDLE;
 
     public SharedDatastructurePaint(Context context) {
         super(context);
@@ -93,28 +93,30 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
             public void run() {
                 long time = 0;
                 while(true) {
-                    switch (colorThreadState) {
-                        case IDLE: {
-                            break;
-                        }
-
-                        case STARTED: {
-                            time = SystemClock.currentThreadTimeMillis();
-                            colorThreadState = ColorThreadState.ACTIVE;
-                            break;
-                        }
-
-                        case ACTIVE: {
-                            if (SystemClock.currentThreadTimeMillis() - time >= 1000) {
-                                colorThreadState = ColorThreadState.COMPLETED;
+                    synchronized(colorThreadState) {
+                        switch (colorThreadState) {
+                            case IDLE: {
+                                break;
                             }
-                            break;
-                        }
 
-                        case COMPLETED: {
-                            h.post(updateColor);
-                            colorThreadState = ColorThreadState.STARTED;
-                            break;
+                            case STARTED: {
+                                time = SystemClock.currentThreadTimeMillis();
+                                colorThreadState = ColorThreadState.ACTIVE;
+                                break;
+                            }
+
+                            case ACTIVE: {
+                                if (SystemClock.currentThreadTimeMillis() - time >= 500) {
+                                    colorThreadState = ColorThreadState.COMPLETED;
+                                }
+                                break;
+                            }
+
+                            case COMPLETED: {
+                                h.post(updateColor);
+                                colorThreadState = ColorThreadState.STARTED;
+                                break;
+                            }
                         }
                     }
                 }
@@ -219,7 +221,6 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
 
         int last = (size >= 10) ? (size - 10) : 0;
         for (int index = size - 1; index >= last; index--) {
-//        for (int index = size >= 10 ? size - 10 : 0; index < size; index++) {
             undoneSketchList.add(sketchList.get(index));
         }
 
