@@ -37,13 +37,14 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
         private float centerX;
         private float centerY;
         private int fillColor;
+        private int radius;
 
-        CircleSketch(float centerX, float centerY, int fillColor) {
+        CircleSketch(float centerX, float centerY, int radius, int fillColor) {
             this.centerX = centerX;
             this.centerY = centerY;
+            this.radius = radius;
             this.fillColor = fillColor;
         }
-
 
         public float getCenterX() {
             return centerX;
@@ -60,6 +61,10 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
         public void setFillColor(int fillColor) {
             this.fillColor = fillColor;
         }
+
+        public int getRadius() {
+            return radius;
+        }
     }
 
     private final List<ColorChangedEventListener> colorChangedListeners = new ArrayList<>();
@@ -68,6 +73,7 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
     private final Paint paint = new Paint();
     private final Random random = new Random();
     private ColorThreadState colorThreadState = ColorThreadState.IDLE;
+    private int radius = 30;
 
     public SharedDatastructurePaint(Context context) {
         super(context);
@@ -145,7 +151,7 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
             if (s instanceof CircleSketch) {
                 CircleSketch circle = (CircleSketch) s;
                 paint.setColor(circle.getFillColor());
-                canvas.drawCircle(circle.getCenterX(), circle.getCenterY(), 30, paint);
+                canvas.drawCircle(circle.getCenterX(), circle.getCenterY(), circle.getRadius(), paint);
             }
         }
     }
@@ -162,11 +168,11 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
 
                 int color = random.nextInt();
                 fillColorChanged(color);
-                sketchList.add(new CircleSketch(event.getX(0), event.getY(0), color));
 
-                if (event.getPointerCount() == 2) {
-                    sketchList.add(new CircleSketch(event.getX(1), event.getY(1), color));
+                for (int index = 0; index < event.getPointerCount(); index++) {
+                    sketchList.add(new CircleSketch(event.getX(index), event.getY(index), radius, color));
                 }
+
                 break;
 
             case MotionEvent.ACTION_UP:
@@ -227,6 +233,10 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
         sketchList.clear();
 
         invalidate();
+    }
+
+    public void SetRadius(int radius) {
+        this.radius = radius;
     }
 
     @Override

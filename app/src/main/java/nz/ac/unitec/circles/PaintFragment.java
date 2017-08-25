@@ -7,6 +7,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 /**
  * Created by eugene on 24/08/2017.
@@ -15,7 +17,6 @@ import android.widget.ImageButton;
 public class PaintFragment extends Fragment implements ColorChangedEventListener {
 
     View mView;
-    ImageButton btnToolStrokeColor;
     ImageButton btnToolFillColor;
 
     @Override
@@ -43,7 +44,8 @@ public class PaintFragment extends Fragment implements ColorChangedEventListener
         final ImageButton btnToolUndo = (ImageButton) mView.findViewById(R.id.btnToolUndo);
         final ImageButton btnToolRedo = (ImageButton) mView.findViewById(R.id.btnToolRedo);
         final ImageButton btnToolClear = (ImageButton) mView.findViewById(R.id.btnToolClear);
-        btnToolStrokeColor = (ImageButton) mView.findViewById(R.id.btnToolStrokeColor);
+        final TextView tvRadius = (TextView) mView.findViewById(R.id.tvRadius);
+        final SeekBar sbWidthRadius = (SeekBar) mView.findViewById(R.id.sbRadius);
         btnToolFillColor = (ImageButton) mView.findViewById(R.id.btnToolFillColor);
 
         btnToolUndo.setOnClickListener(new View.OnClickListener() {
@@ -64,6 +66,24 @@ public class PaintFragment extends Fragment implements ColorChangedEventListener
             @Override
             public void onClick(View v) {
                 sharedPaint.Clear();
+            }
+        });
+
+        sbWidthRadius.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvRadius.setText(progress + "");
+                sharedPaint.SetRadius(progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
 
