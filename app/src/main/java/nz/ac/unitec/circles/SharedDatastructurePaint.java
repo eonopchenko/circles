@@ -169,7 +169,8 @@ public class SharedDatastructurePaint extends View implements View.OnTouchListen
                 int color = random.nextInt();
                 fillColorChanged(color);
 
-                for (int index = 0; index < event.getPointerCount(); index++) {
+                int pointerCount = event.getPointerCount();
+                for (int index = 0; index < pointerCount; index++) {
                     sketchList.add(new CircleSketch(event.getX(index), event.getY(index), radius, color));
                 }
 
